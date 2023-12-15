@@ -1,6 +1,8 @@
 package com.minsait.testingMicroservices.controllers;
 
+import com.minsait.testingMicroservices.exceptions.DineroInsuficienteException;
 import com.minsait.testingMicroservices.models.Cuenta;
+import com.minsait.testingMicroservices.models.TransferirDTO;
 import com.minsait.testingMicroservices.services.CuentaService;
 import com.minsait.testingMicroservices.services.CuentaServiceImpl;
 import lombok.Setter;
@@ -13,7 +15,10 @@ import org.springframework.stereotype.Repository;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 
 //no confundir estereotipos ocn anotaciones como entity que pertenece a jpa tampoco restcontroller y response body es combinacion entre ambas
@@ -74,7 +79,7 @@ public class CuentaController {
     }
 
     @PutMapping("/actualizarporid/{idCuenta}")
-    public ResponseEntity<Cuenta> updateById(@PathVariable Long idCuenta, @RequestBody Cuenta cuentaInput){//pathvariable? no URI allowed
+    public ResponseEntity<Cuenta> updateById(@PathVariable Long idCuenta, @RequestBody Cuenta cuentaInput){
         Cuenta cuenta =null;
         try{
             cuenta = service.findById(idCuenta);
@@ -94,18 +99,42 @@ public class CuentaController {
     }
 
     @PostMapping("/crearcuenta")
+//    @ResponseStatus(HttpStatus.CREATED)
+    //public Cuenta
     public ResponseEntity<Cuenta> save(@RequestBody Cuenta cuentaInput){
 
         try{
             if (cuentaInput != null && service.findAll().stream().noneMatch(cuenta -> cuenta.getId().equals(cuentaInput.getId()))){
                 service.save(cuentaInput);
-                return ResponseEntity.ok().build();
+                return new ResponseEntity<>(cuentaInput, HttpStatus.CREATED);//build() solo se incluye cuando no se regresa un cuerpo
             }
             else throw new NoSuchElementException();
         }catch (NoSuchElementException e){
             return  ResponseEntity.badRequest().build();
         }
 
+    }
+
+
+    @PostMapping
+    public ResponseEntity<?> transferir (@RequestBody TransferirDTO dto){
+        Map<String, Object> response = new HashMap<>();
+        response.put("fecha", LocalDate.now().toString());
+        response.put("peticion", dto);
+
+        try{
+            service.transferir(dto.getIdCuentaOrigen(), dto.getIdCuentaDestino(), dto.getMonto(),dto.getIdBanco());
+            response.put("status","OK");
+            response.put("status", "Transferencia realizada con exito");
+        }catch (NoSuchElementException e){
+            response.put("status", "Not Found");
+            response.put("mensaje", "Error" + e.getMessage());
+            return  new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
+        }catch (DineroInsuficienteException e){
+            response.put("status", "OK");
+            response.put("mensaje", "Error" + e.getMessage());
+        }
+    return ResponseEntity.ok(response);
     }
 
 }
