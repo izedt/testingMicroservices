@@ -19,6 +19,6 @@ public class Banco {
     private String nombre;
 
     @Column(name= "total_transferencias")
-    private  int totalTransferencias;
+        private  int totalTransferencias;
 
 }

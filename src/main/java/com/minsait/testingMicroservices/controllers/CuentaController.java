@@ -4,15 +4,9 @@ import com.minsait.testingMicroservices.exceptions.DineroInsuficienteException;
 import com.minsait.testingMicroservices.models.Cuenta;
 import com.minsait.testingMicroservices.models.TransferirDTO;
 import com.minsait.testingMicroservices.services.CuentaService;
-import com.minsait.testingMicroservices.services.CuentaServiceImpl;
-import lombok.Setter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Component;
-import org.springframework.stereotype.Controller;
-import org.springframework.stereotype.Repository;
-import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -92,10 +86,7 @@ public class CuentaController {
         cuenta.setSaldo(cuentaInput.getSaldo());
         cuenta.setPersona(cuentaInput.getPersona());
 
-
-        cuenta=service.save(cuenta);
-
-        return ResponseEntity.ok(cuenta);
+        return new ResponseEntity<>( service.save(cuenta), HttpStatus.CREATED);
     }
 
     @PostMapping("/crearcuenta")
@@ -116,6 +107,8 @@ public class CuentaController {
     }
 
 
+
+
     @PostMapping
     public ResponseEntity<?> transferir (@RequestBody TransferirDTO dto){
         Map<String, Object> response = new HashMap<>();
@@ -125,14 +118,14 @@ public class CuentaController {
         try{
             service.transferir(dto.getIdCuentaOrigen(), dto.getIdCuentaDestino(), dto.getMonto(),dto.getIdBanco());
             response.put("status","OK");
-            response.put("status", "Transferencia realizada con exito");
+            response.put("mensaje", "Transferencia realizada con exito");
         }catch (NoSuchElementException e){
             response.put("status", "Not Found");
-            response.put("mensaje", "Error" + e.getMessage());
+            response.put("mensaje", "Error " + e.getMessage());
             return  new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
         }catch (DineroInsuficienteException e){
             response.put("status", "OK");
-            response.put("mensaje", "Error" + e.getMessage());
+            response.put("mensaje", "Error " + e.getMessage());
         }
     return ResponseEntity.ok(response);
     }
